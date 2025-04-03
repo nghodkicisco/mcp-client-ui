@@ -65,10 +65,12 @@ class MCPClient:
             file = f.read()
         config = json.loads(file)
 
+        tool_name = list(config["mcpServers"].keys())[0]
+        print("Connecting to MCP server:", tool_name)
         server_params = StdioServerParameters(
-            command=config["mcpServers"]["mcp-server-datadog"]["command"],
-            args= config["mcpServers"]["mcp-server-datadog"]["args"],
-            env=config["mcpServers"]["mcp-server-datadog"]["env"],
+            command=config["mcpServers"][tool_name]["command"],
+            args= config["mcpServers"][tool_name]["args"],
+            env=config["mcpServers"][tool_name].get("env", {}),
         )
 
         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
