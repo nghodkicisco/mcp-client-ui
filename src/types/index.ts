@@ -23,7 +23,7 @@ export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: any;
-  contentType: 'text' | 'table' | 'json' | 'log' | 'dashboard' | 'error' | 'markdown';
+  contentType: 'text' | 'table' | 'json' | 'log' | 'dashboard' | 'error';
   timestamp: Date;
 }
 

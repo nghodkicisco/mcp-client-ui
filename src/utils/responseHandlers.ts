@@ -10,24 +10,8 @@ export function isJsonString(str: string): boolean {
   }
 }
 
-export function isMarkdownTable(str: string): boolean {
-  // Check if the string contains markdown table patterns
-  const tablePattern = /\|.*\|.*\n\|[\s-:]+\|[\s-:]+\|/;
-  return tablePattern.test(str);
-}
-
-export function detectContentType(content: any): 'text' | 'table' | 'json' | 'log' | 'dashboard' | 'error' | 'markdown' {
+export function detectContentType(content: any): 'text' | 'table' | 'json' | 'log' | 'dashboard' | 'error' {
   if (typeof content === 'string') {
-    if (isMarkdownTable(content)) {
-      return 'table';
-    }
-    
-    // Check if the content is markdown (containing markdown syntax)
-    if (content.includes('##') || content.includes('**') || 
-        content.includes('![') || content.includes('[') && content.includes('](')) {
-      return 'markdown';
-    }
-    
     if (isJsonString(content)) {
       try {
         const parsedJson = JSON.parse(content);
@@ -66,43 +50,12 @@ export function detectContentType(content: any): 'text' | 'table' | 'json' | 'lo
   return 'text';
 }
 
-export function parseMarkdownTable(markdown: string): TableData {
-  if (!isMarkdownTable(markdown)) {
-    return { headers: ['Content'], rows: [[markdown]] };
-  }
-
-  const lines = markdown.trim().split('\n');
-  
-  // Extract headers (first row)
-  const headerLine = lines[0];
-  const headers = headerLine
-    .split('|')
-    .map(h => h.trim())
-    .filter(h => h !== '');
-  
-  // Skip the separator line (second row)
-  
-  // Extract data rows (third row onwards)
-  const rows = lines.slice(2).map(line => {
-    return line
-      .split('|')
-      .map(cell => cell.trim())
-      .filter((_, index) => index > 0 && index <= headers.length);
-  });
-  
-  return { headers, rows };
-}
-
 export function parseTableData(content: any): TableData {
   if (typeof content === 'string') {
-    if (isMarkdownTable(content)) {
-      return parseMarkdownTable(content);
-    }
-    
     try {
       return JSON.parse(content) as TableData;
     } catch {
-      return { headers: ['Content'], rows: [[content]] };
+      return { headers: ['Error'], rows: [['Could not parse table data']] };
     }
   }
   
@@ -110,7 +63,7 @@ export function parseTableData(content: any): TableData {
     return content as TableData;
   }
   
-  return { headers: ['Content'], rows: [[typeof content === 'object' ? JSON.stringify(content) : String(content)]] };
+  return { headers: ['Error'], rows: [['Invalid table data']] };
 }
 
 export function parseLogData(content: any): LogEntry[] {

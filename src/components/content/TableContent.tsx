@@ -20,7 +20,7 @@ const TableContent: React.FC<TableContentProps> = ({ content }) => {
             <TableHeader>
               <TableRow>
                 {tableData.headers.map((header, index) => (
-                  <TableHead key={index} className="whitespace-nowrap font-bold">
+                  <TableHead key={index} className="whitespace-nowrap">
                     {header}
                   </TableHead>
                 ))}
@@ -31,18 +31,7 @@ const TableContent: React.FC<TableContentProps> = ({ content }) => {
                 <TableRow key={rowIndex}>
                   {row.map((cell, cellIndex) => (
                     <TableCell key={cellIndex}>
-                      {cellIndex === row.length - 1 && typeof cell === 'string' && cell.startsWith('[Link]') ? (
-                        <a 
-                          href={cell.replace(/\[Link\]\((.*?)\)/, '$1')} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline"
-                        >
-                          Link
-                        </a>
-                      ) : (
-                        typeof cell === 'object' ? JSON.stringify(cell) : String(cell)
-                      )}
+                      {typeof cell === 'object' ? JSON.stringify(cell) : String(cell)}
                     </TableCell>
                   ))}
                 </TableRow>
