@@ -24,7 +24,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <SidebarGroup>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild active={location.pathname === '/'}>
+                  <SidebarMenuButton asChild isActive={location.pathname === '/'}>
                     <Link to="/" className="flex items-center gap-2">
                       <MessageSquare size={18} />
                       <span>Chat</span>
@@ -33,7 +33,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 </SidebarMenuItem>
                 
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild active={location.pathname === '/config'}>
+                  <SidebarMenuButton asChild isActive={location.pathname === '/config'}>
                     <Link to="/config" className="flex items-center gap-2">
                       <Settings size={18} />
                       <span>Configuration</span>
