@@ -22,6 +22,12 @@ export function detectContentType(content: any): 'text' | 'table' | 'json' | 'lo
       return 'table';
     }
     
+    // Check if the content is markdown (containing markdown syntax)
+    if (content.includes('##') || content.includes('**') || 
+        content.includes('![') || content.includes('[') && content.includes('](')) {
+      return 'markdown';
+    }
+    
     if (isJsonString(content)) {
       try {
         const parsedJson = JSON.parse(content);

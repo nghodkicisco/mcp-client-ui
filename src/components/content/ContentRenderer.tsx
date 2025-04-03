@@ -5,6 +5,7 @@ import JsonContent from './JsonContent';
 import TableContent from './TableContent';
 import LogContent from './LogContent';
 import DashboardContent from './DashboardContent';
+import MarkdownContent from './MarkdownContent';
 import { AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { isJsonString, isMarkdownTable } from '@/utils/responseHandlers';
@@ -46,6 +47,9 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ type, content }) => {
     
     case 'dashboard':
       return <DashboardContent content={content} />;
+    
+    case 'markdown':
+      return <MarkdownContent content={String(content)} />;
     
     case 'error':
       return (
