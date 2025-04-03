@@ -1,7 +1,7 @@
 
 # MCP Flask Backend
 
-This is a Flask backend for the Model Context Protocol (MCP) client application that connects to MCP servers like Datadog.
+This is a Quart backend for the Model Context Protocol (MCP) client application that connects to MCP servers like Datadog.
 
 ## Setup
 
@@ -37,6 +37,7 @@ The server will run on http://localhost:5000 and provides the following endpoint
 - `POST /api/chat` - Send chat messages and receive responses
 - `GET /api/config` - Get current MCP server configuration
 - `PUT /api/config` - Update MCP server configuration
+- `GET /` - Basic status check
 
 ## MCP Integration
 
@@ -81,3 +82,4 @@ Example configuration:
     }
 }
 ```
+

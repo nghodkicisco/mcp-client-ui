@@ -6,8 +6,8 @@ import uuid
 import random
 from datetime import datetime, timedelta
 import asyncio
-from aioflask import Flask, request
-from flask_cors import CORS
+from quart import Quart, request
+from quart_cors import cors
 from typing import Optional
 from contextlib import AsyncExitStack
 from openai import AzureOpenAI
@@ -17,8 +17,8 @@ from dotenv import load_dotenv
 
 load_dotenv()  # load environment variables from .env
 
-app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+app = Quart(__name__)
+app = cors(app, allow_origin="*")
 
 # Sample data for demo purposes
 CONFIG_FILE = "config.json"
@@ -161,7 +161,6 @@ class MCPClient:
 
 # Initialize MCP client
 mcp_client = MCPClient()
-initialization_task = None
 
 # Sample response generators
 async def generate_text_response(query):
@@ -408,9 +407,12 @@ async def update_config():
     except Exception as e:
         return {"error": str(e)}, 500
 
+@app.route('/', methods=['GET'])
+async def index():
+    return {"status": "API running", "endpoints": ["/api/chat", "/api/config"]}
+
 @app.before_serving
 async def before_serving():
-    global initialization_task
     # Try to initialize MCP client when app starts
     try:
         await mcp_client.connect_to_server()
@@ -420,7 +422,7 @@ async def before_serving():
         print("The application will fall back to demo responses until configuration is fixed")
 
 if __name__ == '__main__':
-    print("MCP Flask Server starting...")
+    print("MCP Server starting...")
     print("Available endpoints:")
     print("  POST /api/chat - Send chat messages")
     print("  GET /api/config - Get current configuration")
@@ -434,3 +436,4 @@ if __name__ == '__main__':
     print("  anything else - Returns a text response")
     
     app.run(host='0.0.0.0', port=5000, debug=True)
+
