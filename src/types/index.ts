@@ -23,7 +23,7 @@ export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: any;
-  contentType: 'text' | 'table' | 'json' | 'log' | 'dashboard' | 'error';
+  contentType: 'text' | 'table' | 'json' | 'log' | 'dashboard' | 'error' | 'image' | 'markdown';
   timestamp: Date;
 }
 
@@ -60,4 +60,12 @@ export interface ChartData {
   title: string;
   data: any;
   config?: any;
+}
+
+// Image data type
+export interface ImageData {
+  url: string;
+  alt?: string;
+  width?: number;
+  height?: number;
 }

@@ -5,11 +5,12 @@ import JsonContent from './JsonContent';
 import TableContent from './TableContent';
 import LogContent from './LogContent';
 import DashboardContent from './DashboardContent';
+import ImageContent from './ImageContent';
 import { AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface ContentRendererProps {
-  type: 'text' | 'table' | 'json' | 'log' | 'dashboard' | 'error';
+  type: 'text' | 'table' | 'json' | 'log' | 'dashboard' | 'error' | 'image' | 'markdown';
   content: any;
 }
 
@@ -29,6 +30,9 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ type, content }) => {
     
     case 'dashboard':
       return <DashboardContent content={content} />;
+    
+    case 'image':
+      return <ImageContent content={content} />;
     
     case 'error':
       return (

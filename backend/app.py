@@ -1,4 +1,3 @@
-
 import json
 import os
 import time
@@ -14,6 +13,7 @@ from openai import AzureOpenAI
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from dotenv import load_dotenv
+import base64
 
 load_dotenv()  # load environment variables from .env
 
@@ -54,7 +54,7 @@ class MCPClient:
                 api_key=os.getenv("AZURE_OPENAI_API_KEY"),
                 api_version="2024-05-01-preview"
                 )
-    # methods will go here
+    
     async def connect_to_server(self):
         """Connect to an MCP server
 
@@ -226,6 +226,27 @@ async def generate_log_response(query):
         "content": log_entries
     }
 
+async def generate_image_response(query):
+    # Example images for demonstration
+    sample_images = [
+        "https://images.unsplash.com/photo-1682687982423-295485af248a?w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1682687218147-9658b3177af9?w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1677442135136-760c813770c3?w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1686002359658-e7afa11c4238?w=800&auto=format&fit=crop"
+    ]
+    
+    # Select a random image
+    image_url = random.choice(sample_images)
+    
+    return {
+        "type": "image",
+        "content": {
+            "url": image_url,
+            "alt": f"Image related to '{query}'",
+            "width": 800
+        }
+    }
+
 async def generate_dashboard_response(query):
     # Line chart data
     line_data = []
@@ -348,6 +369,8 @@ async def chat():
                 response = await generate_log_response(message)
             elif "dashboard" in message.lower() or "chart" in message.lower() or "graph" in message.lower():
                 response = await generate_dashboard_response(message)
+            elif "image" in message.lower() or "picture" in message.lower() or "photo" in message.lower():
+                response = await generate_image_response(message)
             elif "fail" in message.lower() or "break" in message.lower():
                 response = await generate_error_response(message)
             else:
@@ -432,8 +455,8 @@ if __name__ == '__main__':
     print("  'table' or 'list' - Returns tabular data")
     print("  'log' or 'error' - Returns log entries")
     print("  'dashboard', 'chart', or 'graph' - Returns dashboard visualization data")
+    print("  'image', 'picture', or 'photo' - Returns an image")
     print("  'fail' or 'break' - Returns an error message")
     print("  anything else - Returns a text response")
     
     app.run(host='0.0.0.0', port=5000, debug=True)
-
