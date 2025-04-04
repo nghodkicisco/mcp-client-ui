@@ -47,7 +47,7 @@ chat_sessions = {}
 class MCPClient:
     def __init__(self):
         # Initialize session and client objects
-        self.session: Optional[ClientSession] = None
+        self.session: Optional[ClientSession] = {}
         self.exit_stack = AsyncExitStack()
         self.client = AzureOpenAI(
                 azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT"),
@@ -55,107 +55,111 @@ class MCPClient:
                 api_version="2024-05-01-preview"
                 )
     
-    async def connect_to_server(self):
-        """Connect to an MCP server
-
-        Args:
-            server_script_path: Path to the server script (.py or .js)
-        """
-        with open('config.json', 'r') as f:
-            file = f.read()
-        config = json.loads(file)
-
-        tool_name = list(config["mcpServers"].keys())[0]
-        print("Connecting to MCP server:", tool_name)
-        server_params = StdioServerParameters(
-            command=config["mcpServers"][tool_name]["command"],
-            args= config["mcpServers"][tool_name]["args"],
-            env=config["mcpServers"][tool_name].get("env", {}),
-        )
-
-        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
-        self.stdio, self.write = stdio_transport
-        self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
-
-        await self.session.initialize()
-
-        # List available tools
-        response = await self.session.list_tools()
-        tools = response.tools
-        print("\nConnected to server with tools:", [tool.name for tool in tools])
-
+        async def connect_to_server(self):
+            """Connect to multiple MCP servers"""
+            with open('config.json', 'r') as f:
+                file = f.read()
+            config = json.loads(file)
+    
+            for server_name, server_config in config["mcpServers"].items():
+                server_params = StdioServerParameters(
+                    command=server_config["command"],
+                    args=server_config["args"],
+                    env=server_config.get("env", {}),
+                )
+    
+                stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
+                stdio, write = stdio_transport
+                session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
+    
+                await session.initialize()
+    
+                # List available tools
+                response = await session.list_tools()
+                tools = response.tools
+                print(f"Connected to {server_name} with tools:", [tool.name for tool in tools])
+                # Store session and transport info
+                self.session[server_name] = {
+                    "session": session,
+                    "stdio": stdio,
+                    "write": write
+                }
     async def flatten(self, xss):
         return [x for xs in xss for x in xs]
         
     async def process_query(self, query: str) -> str:
-        """Process a query using Claude and available tools"""
-        messages = [
-            {
-                "role": "user",
-                "content": query
-            }
-        ]
-        deployment_name = "gpt4o"
-        response = await self.session.list_tools()
-        available_tools = [{
-            "name": tool.name,
-            "description": tool.description,
-            "parameters": tool.inputSchema
-        } for tool in response.tools]
-
-        available_tools = [{"type": "function", "function": tool} for tool in available_tools]
-
-        response = self.client.chat.completions.create(
-            model=deployment_name,
-            messages=messages,
-            tools=available_tools,
-            tool_choice="auto",
-        )
-
-        # Process response and handle tool calls
         final_text = []
 
-        assistant_message_content = []
-        if response.choices[0].message.tool_calls:
-            for tool_call in response.choices[0].message.tool_calls:
-                # Extract tool name and arguments
-                tool_name = tool_call.function.name
-                if tool_call.function.arguments:
-                    # Parse JSON arguments
-                    tool_args = json.loads(tool_call.function.arguments)
-                else:
-                    tool_args = {}
+        for server_name, server_data in self.session.items():
+            session = server_data["session"]
+            """Process a query using Claude and available tools"""
+            messages = [
+                {
+                    "role": "user",
+                    "content": query
+                }
+            ]
+            deployment_name = "gpt4o"
+            response = await session.list_tools()
+            available_tools = [{
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": tool.inputSchema
+            } for tool in response.tools]
 
-                # Execute tool call
-                result = await self.session.call_tool(tool_name, tool_args)
-                final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
-                print("result", result.content)
-                messages.append({
-                    "role": "assistant",
-                    "content": assistant_message_content,
-                    "tool_calls": [
-                        {
-                            "id": tool_call.id,
-                            "function": {
-                                "name": tool_call.function.name,
-                                "arguments": tool_call.function.arguments
-                            },
-                            "type": "function"
-                        }
-                    ]
-                })
-                messages.append({
-                    "tool_call_id": tool_call.id,
-                    "role": "tool",
-                    "name": tool_name,
-                    "content": result.content[0].text,
-                })
-                response = self.client.chat.completions.create(
-                    model=deployment_name,
-                    messages=messages,
-                    tools=available_tools,
-                    tool_choice="auto",
-                )
+            available_tools = [{"type": "function", "function": tool} for tool in available_tools]
+
+            response = self.client.chat.completions.create(
+                model=deployment_name,
+                messages=messages,
+                tools=available_tools,
+                tool_choice="auto",
+            )
+
+            # Process response and handle tool calls
+            #final_text = []
+
+            assistant_message_content = []
+            if response.choices[0].message.tool_calls:
+                for tool_call in response.choices[0].message.tool_calls:
+                    # Extract tool name and arguments
+                    tool_name = tool_call.function.name
+                    if tool_call.function.arguments:
+                        # Parse JSON arguments
+                        tool_args = json.loads(tool_call.function.arguments)
+                    else:
+                        tool_args = {}
+
+                    # Execute tool call
+                    result = await session.call_tool(tool_name, tool_args)
+                    final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
+                    print("result", result.content)
+                    messages.append({
+                        "role": "assistant",
+                        "content": assistant_message_content,
+                        "tool_calls": [
+                            {
+                                "id": tool_call.id,
+                                "function": {
+                                    "name": tool_call.function.name,
+                                    "arguments": tool_call.function.arguments
+                                },
+                                "type": "function"
+                            }
+                        ]
+                    })
+                    messages.append({
+                        "tool_call_id": tool_call.id,
+                        "role": "tool",
+                        "name": tool_name,
+                        "content": result.content[0].text,
+                    })
+                    response = self.client.chat.completions.create(
+                        model=deployment_name,
+                        messages=messages,
+                        tools=available_tools,
+                        tool_choice="auto",
+                    )
 
                 final_text.append(response.choices[0].message.content)
 
